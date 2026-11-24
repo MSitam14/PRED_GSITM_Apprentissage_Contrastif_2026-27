@@ -237,31 +237,38 @@
 
 \chapter{Introduction}
 
-\begin{explanation}
-   Chaque début de chapitre commence par une présentation de ses sections.
-   En l'occurrence, l'introduction générale doit indiquer quelle problématique va être développée dans ce rapport, les objectifs plus précis que l'on s'est fixés, le travail qui a été réalisé et les apports de ce dernier.
-   La dernière section de l'introduction détaillera l'organisation logique du rapport et présentera ses différents chapitres.
-\end{explanation}
-
 \section{Présentation de la problématique}
 
-\begin{explanation}
-   Le sujet d'étude est sans aucun doute un domaine trop vaste dans lequel il va falloir inscrire une problématique plus spécifique.
+Les trajectoires sémantiques décrivent les déplacements d'objets mobiles et les environnements qu'ils traversent.
+Dans les environnements intérieurs, ces trajectoires peuvent évoluer avec les lieux,
+les objets et les relations qui les relient.
+Le modèle G-SITM représente ces évolutions dans un graphe multidimensionnel :
+il distingue les identités persistantes, les états temporels et les mises à jour locales.
 
-   Le sujet de l'étude est donc décrit en termes généraux, en relevant son intérêt et l'absence de solution satisfaisante, à votre connaissance, sur tel ou tel autre aspect du thème.
+Par ailleurs, l'apprentissage contrastif apprend des représentations de graphes
+à partir de vues positives et négatives.
+Deux vues du même objet sont rapprochées dans l'espace des embeddings,
+tandis que des vues d'objets différents sont éloignées.
+Les approches existantes construisent souvent ces vues par des perturbations aléatoires :
+suppression d'arêtes, masquage d'attributs ou échantillonnage du voisinage.
+Ces opérations peuvent toutefois modifier une partie importante du graphe
+sans tenir compte de sa structure, de ses types de relations ou de ses contraintes temporelles.
 
-   À l'intérieur de ce vaste champ de connaissances, technologies ou techniques encore imparfaites, on souhaite s'attaquer sinon à la résolution du moins à l'amélioration d'un point particulier encore insatisfaisant.
-
-   Il convient donc de décrire plus précisément des difficultés que l'on cherche à contourner, donc la problématique.
-\end{explanation}
+Le sujet cherche donc à déterminer si la structure de G-SITM permet de construire
+des vues contrastives plus adaptées que des augmentations purement aléatoires.
+Nous devons notamment identifier les modifications préservant la signification
+des entités, des états et des trajectoires,
+puis mesurer leur effet sur les représentations apprises.
 
 \section{Objectifs poursuivis}
 
-\begin{explanation}
-   La problématique décrite précédemment peut se révéler encore trop vaste ou bien les solutions potentielle envisagées trop nombreuses.
-    Il convient donc de préciser quels objectifs sont fixés au tout début du travail.
-   Nous verrons ultérieurement s'ils ont été atteints et feront une critique rétrospective de notre travail.
-\end{explanation}
+Ce projet a trois objectifs.
+Nous cherchons d'abord à comparer les principales méthodes d'apprentissage contrastif
+sur graphes avec le modèle G-SITM.
+Nous voulons ensuite définir des augmentations exploitées sur G-SITM
+qui respectent ses catégories de nœuds, ses types d'arêtes et ses intervalles de validité.
+Enfin, nous voulons évaluer ces augmentations
+et les comparer à une perturbation aléatoire sur une tâche de représentation.
 
 \section{Travail réalisé}
 
@@ -310,77 +317,126 @@
 \chapter{\'Etat de l'art}
 \label{chap:EtatArt}
 
-Ce chapitre présente les travaux qui servent de base au projet.
-Deux axes sont étudiés~: (i)~l'apprentissage contrastif sur graphes, avec la méthode GraphCL \cite{hafidi2020graphcl} et le module STKG-CL de STKG-PLM \cite{chen2025stkgplm}~; (ii)~la modélisation des trajectoires sémantiques, avec l'état de l'art de \cite{siouane2026survey} et le modèle G-SITM \cite{siouane2026gsitm}, qui est le graphe cible du projet.
-Chaque section distingue ce que les auteurs affirment de l'analyse que nous en faisons pour notre sujet.
+Nous examinons ici les travaux qui portent sur les deux aspects du projet. 
+ Le premier est l'apprentissage contrastif sur graphes, avec GraphCL \cite{hafidi2020graphcl} et le
+module STKG-CL de STKG-PLM \cite{chen2025stkgplm}.
+ Le second concerne la modélisation des trajectoires sémantiques. Nous présentons l'article de
+synthèse de Siouane et al. \cite{siouane2026survey},
+puis G-SITM \cite{siouane2026gsitm}, le graphe cible du projet. Pour chaque travail, 
+les résultats annoncés par les auteurs sont distingués de leur intérêt pour notre sujet.
 
 %-----------------------------------------------------------------------------
 \section{Apprentissage contrastif sur graphes}
 
-L'apprentissage contrastif (\emph{contrastive learning}) apprend des représentations sans étiquettes~: deux \emph{vues} d'un même objet forment une paire positive et sont rapprochées dans l'espace d'embeddings, tandis que des vues d'objets différents (exemples négatifs) sont éloignées.
-Sur les graphes, les vues sont obtenues par des \emph{augmentations} du graphe (suppression d'arêtes, masquage de attributs, échantillonnage de voisinage), puis encodées par un réseau de neurones sur graphes (GNN).
+ L'apprentissage contrastif (\emph{contrastive learning}) apprend des représentations sans
+étiquettes.
+ Il rapproche, dans l'espace des embeddings, deux \emph{vues} du même objet, appelées paire
+positive, et éloigne les vues d'objets différents.
+ Sur les graphes, ces vues résultent d'\emph{augmentations} : suppression d'arêtes, masquage
+d'attributs ou échantillonnage du voisinage.
+Un réseau de neurones sur graphes (GNN) les encode ensuite.
 
 \subsection{GraphCL (Hafidi et al., 2020)}
 
 \subsubsection*{Présentation}
 
-Hafidi et al. \cite{hafidi2020graphcl} proposent un cadre contrastif pour apprendre des embeddings de \emph{nœuds} de manière auto-supervisée.
-Pour chaque nœud $u$, on extrait son sous-graphe à $L$ sauts, puis on en produit deux versions perturbées aléatoirement~: les arêtes sont supprimées avec une probabilité $p$ (tirage de Bernoulli) et un \emph{dropout} est appliqué aux attributs des nœuds.
-Un encodeur GNN, avec agrégation par moyenne dans le style GraphSAGE, produit deux représentations $h_{u,1}$ et $h_{u,2}$ qui forment la paire positive.
-Les $2M-2$ autres sous-graphes du mini-lot servent de négatifs.
-La fonction de perte est une entropie croisée normalisée avec température $\tau$ (de type NT-Xent), fondée sur la similarité cosinus.
+ Hafidi et al. \cite{hafidi2020graphcl} proposent un cadre contrastif auto-supervisé pour apprendre
+des embeddings de \emph{nœuds}.
+ Pour chaque nœud $u$, ils extraient son sous-graphe à $L$ sauts et en produisent deux versions
+perturbées.
+ Les arêtes sont supprimées avec une probabilité $p$ selon un tirage de Bernoulli, et les attributs
+des nœuds subissent un \emph{dropout}.
+ Un encodeur GNN, dont l'agrégation par moyenne s'inspire de GraphSAGE, transforme ces vues en
+représentations $h_{u,1}$ et $h_{u,2}$.
+ Elles constituent une paire positive. Les $2M-2$ autres sous-graphes du mini-lot servent d'exemples
+négatifs.
+ La perte NT-Xent utilise la similarité cosinus et normalise l'entropie croisée par la température
+$\tau$.
 
-Les auteurs évaluent les embeddings par une régression logistique linéaire sur des tâches de classification de nœuds, en transductif (Cora, Citeseer, Pubmed) et en inductif (Reddit, PPI).
-Ils rapportent de meilleurs résultats que DeepWalk, EP-B, GraphSAGE non supervisé et Deep Graph Infomax (DGI), par exemple 83{,}6\,\% sur Cora contre 82{,}3\,\% pour DGI.
-Ils observent aussi qu'une forte perturbation des attributs (50 à 70\,\%) combinée à une faible perturbation de la structure (10 à 20\,\% d'arêtes) donne les meilleures représentations.
-Enfin, ils relient la perte à une borne inférieure de l'information mutuelle entre les deux vues.
+ Les auteurs évaluent les embeddings avec une régression logistique linéaire sur des tâches de
+classification de nœuds.
+ Ils utilisent des scénarios transductifs sur Cora, Citeseer et Pubmed, ainsi que des scénarios
+inductifs sur Reddit et PPI.
+ GraphCL obtient de meilleurs résultats que DeepWalk, EP-B, GraphSAGE non supervisé et Deep Graph
+Infomax (DGI).
+Il atteint par exemple 83{,}6\,\% sur Cora, contre 82{,}3\,\% pour DGI. 
+ Les meilleurs résultats correspondent à une perturbation importante des attributs (50 à 70\,\%) et
+limitée de la structure (10 à 20\,\% des arêtes).
+ Les auteurs montrent aussi que la perte fournit une borne inférieure de l'information mutuelle
+entre les deux vues.
 
 \subsubsection*{Analyse}
 
 \emph{Intérêts pour le projet.}
-Cet article fournit un modèle simple et bien décrit pour l'approche de référence demandée par le sujet~: deux vues aléatoires, un encodeur, une perte contrastive, une évaluation linéaire.
-Son protocole d'évaluation (sonde linéaire sur les embeddings) est transposable à notre cadre.
+ Cet article décrit une approche de référence simple : deux vues aléatoires, un encodeur, une perte
+contrastive et une évaluation linéaire.
+Notre projet peut reprendre sa sonde linéaire sur les embeddings.
 
 \emph{Limites.}
-Les graphes étudiés sont non orientés et à un seul type de nœud et d'arête~: les types de relations, les validités temporelles ou les dimensions sémantiques de G-SITM ne sont pas exploités.
-Les augmentations sont purement aléatoires, ce qui est précisément la référence générique que notre projet cherche à dépasser.
-Les auteurs signalent eux-mêmes que la borne d'information mutuelle peut être faible et que le succès des méthodes contrastives dépend beaucoup de l'encodeur.
+ Les graphes étudiés sont non orientés et homogènes. La méthode ne distingue pas les types de
+relations,
+ les validités temporelles ou les dimensions sémantiques de G-SITM. Ses augmentations sont
+entièrement aléatoires,
+alors que notre projet cherche à construire des vues adaptées à la structure du graphe. 
+ Les auteurs signalent que la borne sur l'information mutuelle peut être faible et que les
+performances dépendent fortement de l'encodeur.
 
 \emph{Remarque.}
-Le sujet cite aussi un article de You et al. (NeurIPS 2020) également nommé « GraphCL », consacré à l'apprentissage contrastif de graphes entiers avec augmentations.
-Les deux travaux sont distincts~; nous les différencions par leurs auteurs.
+ Le sujet mentionne aussi un article de You et al. (NeurIPS 2020), intitulé « GraphCL » et consacré
+à l'apprentissage contrastif sur des graphes entiers.
+Nous distinguons ces deux travaux par leurs auteurs.
 
 \subsection{STKG-CL dans STKG-PLM (Chen et al., 2025)}
 
 \subsubsection*{Présentation}
 
-Chen et al. \cite{chen2025stkgplm} proposent STKG-PLM pour la recommandation du prochain point d'intérêt (\emph{next POI}).
-Le modèle combine trois modules~: STTP (transformation des trajectoires en texte pour un modèle de langage pré-entraîné), STT (transformeur spatio-temporel sur la séquence) et STKG-CL, qui nous intéresse ici.
-Les trois sorties sont fusionnées par une porte apprenable, et la perte totale est la somme de la perte contrastive et de la perte de recommandation.
+ Chen et al. \cite{chen2025stkgplm} proposent STKG-PLM pour recommander le prochain point d'intérêt
+(\emph{next POI}).
+ Le modèle comprend trois modules : STTP transforme les trajectoires en texte pour un modèle de
+langage pré-entraîné ;
+ STT applique un transformeur spatio-temporel à la séquence ; STKG-CL réalise l'apprentissage
+contrastif.
+ Une porte apprenable fusionne les sorties des trois modules. La perte totale combine l'objectif
+contrastif et l'objectif de recommandation.
 
-STKG-CL part d'un graphe de connaissances spatio-temporel (STKG) contenant des utilisateurs, des POI et des attributs, reliés par des relations de passage (check-in), de transition spatio-temporelle et de propriétés.
-Pour chaque trajectoire, les utilisateurs et les POI visités sont pris comme nœuds centraux, puis on échantillonne $z$ couches de voisins, avec $m$ voisins tirés au hasard par couche, afin d'obtenir deux sous-graphes augmentés.
-Ces sous-graphes sont encodés par un réseau d'attention sur graphe de connaissances (KGAT) à paramètres partagés.
-Les représentations sont agrégées par moyenne, puis comparées par une perte InfoNCE avec similarité cosinus et température $\tau$.
-L'objectif est de limiter le « bruit de connaissance », c'est-à-dire les connaissances externes introduites par le graphe mais incohérentes avec les préférences de l'utilisateur.
+STKG-CL utilise un graphe de connaissances spatio-temporel (STKG) reliant des utilisateurs, 
+ des POI et leurs attributs par des relations de passage (\emph{check-in}), de transition
+spatio-temporelle et de propriété. Pour chaque trajectoire,
+les utilisateurs et les POI visités deviennent des nœuds centraux. 
+ La méthode échantillonne $z$ couches de voisins et tire $m$ voisins au hasard dans chaque couche
+pour construire deux sous-graphes augmentés.
+Un réseau d'attention sur graphes de connaissances (KGAT), partagé entre les deux vues, les encode. 
+ Les représentations sont moyennées puis comparées avec une perte InfoNCE fondée sur la similarité
+cosinus et la température $\tau$.
+ Cette perte doit limiter le « bruit de connaissance », c'est-à-dire les informations externes du
+graphe qui ne correspondent pas aux préférences de l'utilisateur.
 
-Les expériences portent sur trois jeux de données (TKY, IST, GWL).
-Le modèle complet dépasse les méthodes de référence de 6{,}22\,\% à 8{,}98\,\% en moyenne selon le jeu de données.
-Les variantes sans perte contrastive sont moins performantes, et une visualisation (KPCA) montre des séquences d'utilisateurs mieux regroupées avec la perte contrastive.
-Une profondeur de 2 couches et 20 voisins par POI donnent les meilleurs résultats~; une profondeur plus grande dégrade les performances car elle introduit des connaissances non pertinentes.
+ Les auteurs évaluent le modèle sur TKY, IST et GWL. Selon le jeu de données, le modèle complet
+améliore les références de 6{,}22\,\% à 8{,}98\,\% en moyenne.
+Les variantes sans perte contrastive obtiennent de moins bons résultats. 
+ Une visualisation par KPCA montre aussi que cette perte regroupe mieux les séquences d'un même
+utilisateur.
+Les meilleurs résultats sont obtenus avec deux couches et 20 voisins par POI. 
+ Une profondeur plus grande fait baisser les performances : le voisinage élargi apporte des
+connaissances moins pertinentes.
 
 \subsubsection*{Analyse}
 
 \emph{Intérêts pour le projet.}
-C'est l'approche de référence imposée par le sujet.
-Elle illustre un pipeline complet (sous-graphes centrés sur une trajectoire, deux vues, encodeur à attention, InfoNCE) et met en évidence l'effet de la profondeur du voisinage, qui correspond à l'un des paramètres de notre analyse de sensibilité.
+ C'est l'approche de référence imposée par le sujet. Elle décrit un pipeline complet (sous-graphes
+centrés sur une trajectoire, deux vues, encodeur à attention et perte InfoNCE) et étudie l'effet de
+la profondeur du voisinage. Nous reprendrons ce dernier paramètre dans notre analyse de sensibilité.
 
 \emph{Limites.}
-Les deux vues ne diffèrent que par un échantillonnage aléatoire de voisins~; aucune sémantique du graphe (types de relations, temps) ne guide l'augmentation.
-Le gain de la partie contrastive n'est mesuré qu'indirectement, par ablation et visualisation, dans une tâche de recommandation qui mélange plusieurs modules.
-Le STKG est un graphe de faits, sans distinction entre identité persistante, états et mises à jour, contrairement à G-SITM~; rien ne garantit que ses choix d'augmentation se transposent à G-SITM.
-Enfin, la description du choix des paires positives et négatives est ambiguë dans l'article (le texte évoque des vues de trajectoires du même utilisateur, alors que la perte contraste des trajectoires du mini-lot).
-Nous retenons l'interprétation du sujet~: deux vues d'une même trajectoire forment une paire positive.
+ Les deux vues reposent uniquement sur un échantillonnage aléatoire des voisins. Ni les types de
+relations ni le temps ne guident leur construction. Le gain propre à l'apprentissage contrastif est
+évalué indirectement par ablation et visualisation, dans une tâche qui combine plusieurs modules. Le
+STKG représente des faits sans distinguer les identités persistantes, les états et les mises à jour,
+contrairement à G-SITM. Les augmentations utilisées pour STKG-PLM ne peuvent donc pas être reprises
+directement pour G-SITM. Enfin, l'article ne décrit pas clairement les paires positives et négatives
+: il évoque des vues de trajectoires du même utilisateur, tandis que la perte semble comparer les
+trajectoires du mini-lot. Nous retenons l'interprétation du sujet : deux vues d'une même trajectoire
+constituent une paire positive.
 
 %-----------------------------------------------------------------------------
 \section{Trajectoires sémantiques et modèle G-SITM}
@@ -389,43 +445,69 @@ Nous retenons l'interprétation du sujet~: deux vues d'une même trajectoire for
 
 \subsubsection*{Présentation}
 
-Cet article de synthèse \cite{siouane2026survey} compare 19 modèles de trajectoires sémantiques, en extérieur, en intérieur et hybrides, publiés de 2007 à 2024.
-Les auteurs proposent un « modèle de comparaison » commun, neuf critères (trois structurels~: environnement de déplacement, arrêts et déplacements (\emph{stops and moves}), sous-trajectoires~; six sémantiques~: temporelle, spatiale, objet mobile, point d'intérêt, environnement, interactions) et trois niveaux d'expressivité (faible, moyen, élevé), selon que la sémantique est une simple annotation, une hiérarchie ou une ontologie formelle.
+ Dans leur article de synthèse \cite{siouane2026survey}, les auteurs comparent 19 modèles de
+trajectoires sémantiques publiés entre 2007 et 2024 pour des environnements extérieurs, intérieurs
+ou hybrides. Ils proposent neuf critères : trois portant sur la structure (environnement de
+déplacement, arrêts et déplacements (\emph{stops and moves}), sous-trajectoires) et six portant sur
+la sémantique (temps, espace, objets mobiles, points d'intérêt, environnement et interactions). Ils
+distinguent trois niveaux d'expressivité sémantique : faible, moyen et élevé. Ils reposent
+respectivement sur une annotation, une hiérarchie ou une ontologie formelle.
 
-Leurs conclusions principales sont que les modèles anciens visent surtout l'extérieur, que les modèles d'intérieur (STriDE, SITM, TSTM-in) supposent largement un environnement statique, et que la sémantique d'interactions est presque absente.
-Ils soulignent aussi que l'évolution dans le temps des espaces et des entités est rarement modélisée.
+ Cette comparaison montre que les anciens modèles visent surtout les environnements extérieurs. Les
+modèles d'intérieur, comme STriDE, SITM et TSTM-in, supposent souvent un environnement statique. Les
+interactions restent peu représentées. L'évolution dans le temps des espaces et des entités est
+rarement prise en compte.
 
 \subsubsection*{Analyse}
 
 \emph{Intérêts pour le projet.}
-Cet article donne le vocabulaire (dimensions sémantiques, sous-trajectoire, épisode) pour décrire ce qu'un graphe G-SITM contient, et donc ce qu'une augmentation peut préserver ou modifier.
+ Cette synthèse fournit les notions nécessaires pour décrire G-SITM : dimensions sémantiques,
+sous-trajectoire et épisode. Elles permettent aussi de préciser ce qu'une augmentation pourrait
+préserver ou modifier.
 
 \emph{Limites.}
-Il s'agit d'un travail de modélisation, sans apprentissage de représentations~; son lien avec notre sujet est conceptuel.
+ L'article porte sur la modélisation, pas sur l'apprentissage de représentations. Son apport pour
+notre sujet est donc conceptuel.
 
 \subsection{G-SITM (Siouane et al., 2026)}
 
 \subsubsection*{Présentation}
 
-G-SITM \cite{siouane2026gsitm} est un modèle de graphe multidimensionnel pour représenter des environnements intérieurs qui évoluent (le musée sert d'exemple).
-Un graphe est défini par $G=(V,E,D,T)$ avec trois catégories de nœuds~: les nœuds de base $V_{base}$ (identité persistante d'une entité, par exemple une salle), les nœuds séquentiels $V_{seq}$ (états valides sur un intervalle $[t_s,t_e)$) et les nœuds différentiels $V_{diff}$ (mises à jour locales, par exemple un changement de température).
-Chaque nœud appartient à une dimension sémantique (par exemple espace, POI, objets mobiles), chacune décrite par une ontologie.
+ G-SITM \cite{siouane2026gsitm} représente sous forme de graphe multidimensionnel des environnements
+intérieurs évolutifs. Les auteurs prennent un musée comme exemple. Le graphe $G=(V,E,D,T)$ comprend
+trois catégories de nœuds. Les nœuds de base $V_{base}$ représentent l'identité persistante d'une
+entité, une salle par exemple. Les nœuds séquentiels $V_{seq}$ décrivent des états valides sur un
+intervalle $[t_s,t_e)$. Les nœuds différentiels $V_{diff}$ enregistrent des mises à jour locales,
+comme un changement de température. Chaque nœud appartient à une dimension sémantique (espace, POI
+ou objet mobile) décrite par une ontologie.
 
-Quatre types d'arêtes sont distingués~: intra-dimensionnelles ($E_{rel}$, avec intervalle de validité), inter-dimensionnelles ($E_{cross}$, par exemple un artefact situé dans une salle), d'évolution ($E_{evol}$, avec les opérateurs \emph{split} et \emph{merge} qui conservent la filiation) et différentielles ($E_{diff}$, qui rattachent une mise à jour à l'état concerné).
-Les validités temporelles imposent des contraintes (intervalles d'états disjoints, mise à jour dans l'intervalle de l'état qu'elle modifie).
+ Le modèle distingue quatre types d'arêtes. Les arêtes intra-dimensionnelles $E_{rel}$ portent un
+intervalle de validité. Les arêtes inter-dimensionnelles $E_{cross}$ relient des entités appartenant
+à des dimensions différentes, comme un artefact et la salle où il se trouve. Les arêtes d'évolution
+$E_{evol}$ utilisent les opérateurs \emph{split} et \emph{merge} pour préserver la filiation. Les
+arêtes différentielles $E_{diff}$ relient une mise à jour à l'état concerné. Les intervalles des
+états doivent être disjoints, et une mise à jour doit appartenir à l'intervalle de l'état qu'elle
+modifie.
 
-L'évaluation compare G-SITM à des modèles existants selon sept critères de couverture, puis mesure la croissance du graphe sur un scénario de musée synthétique fondé sur le plan du Musée archéologique national d'Athènes.
-Après 1\,000 événements, G-SITM réduit le nombre de nœuds de 99{,}6\,\% et d'arêtes de 99{,}2\,\% par rapport à une représentation par instantanés, et le nombre d'arêtes de 56{,}8\,\% par rapport à une représentation par faits horodatés, au prix de jusqu'à 9{,}2\,\% de nœuds supplémentaires.
+ Les auteurs évaluent d'abord G-SITM par rapport à des modèles existants selon sept critères de
+couverture. Ils mesurent ensuite la croissance du graphe dans un scénario synthétique de musée,
+fondé sur le plan du Musée archéologique national d'Athènes. Après 1\,000 événements, le nombre de
+nœuds et d'arêtes diminue respectivement de 99{,}6\,\% et 99{,}2\,\% par rapport à une
+représentation par instantanés. Par rapport à une représentation par faits horodatés, le nombre
+d'arêtes baisse de 56{,}8\,\%, au prix d'une hausse pouvant atteindre 9{,}2\,\% du nombre de nœuds.
 
 \subsubsection*{Analyse}
 
 \emph{Intérêts pour le projet.}
-G-SITM est le graphe sur lequel porte le sujet.
-Sa structure (types de nœuds, types d'arêtes, contraintes temporelles) fournit les informations qu'une augmentation spécifique pourrait exploiter ou devrait respecter.
+ G-SITM est le graphe visé par le sujet. Ses catégories de nœuds, ses types d'arêtes et ses
+contraintes temporelles permettent de définir des augmentations qui préservent la structure du
+graphe.
 
 \emph{Limites.}
-Les auteurs précisent que l'évaluation est préliminaire~: les données sont synthétiques et les coûts sont estimés analytiquement, sans implémentation dans un système de stockage réel.
-Aucune représentation vectorielle ni apprentissage n'est proposé~; la question de savoir quelles parties du graphe peuvent être modifiées sans changer la signification d'un objet reste ouverte et constitue notre contribution potentielle.
+ Les auteurs qualifient leur évaluation de préliminaire : elle repose sur des données synthétiques
+et sur une estimation analytique des coûts, sans mise en œuvre dans un système de stockage réel. Le
+modèle ne propose ni représentation vectorielle ni méthode d'apprentissage. Notre projet étudiera
+quelles parties du graphe peuvent être modifiées sans altérer le sens des objets.
 
 %-----------------------------------------------------------------------------
 \section{Récapitulatif}
@@ -442,7 +524,7 @@ Aucune représentation vectorielle ni apprentissage n'est proposé~; la question
          \hline
          STKG-CL \cite{chen2025stkgplm} & Embeddings de sous-graphes de trajectoires, échantillonnage de voisins & Pipeline complet sur un graphe de connaissances, étude de la profondeur & Augmentation générique, effet isolé mal mesuré, graphe de faits \\
          \hline
-         État de l'art trajectoires \cite{siouane2026survey} & Comparaison de 19 modèles & Vocabulaire et critères pour décrire G-SITM & Pas d'apprentissage \\
+         État de l'art trajectoires \cite{siouane2026survey} & Comparaison de 19 modèles & Vocabulaire et critères pour décrire G-SITM & Pas d'apprentissage de représentations \\
          \hline
          G-SITM \cite{siouane2026gsitm} & Graphe d'entités, états et mises à jour évolutifs & Structure riche à exploiter pour les vues & Évaluation synthétique, pas de représentation vectorielle \\
          \hline
@@ -457,11 +539,13 @@ Le tableau~\ref{tab:Comparatif} résume les apports et les limites de chaque tra
 %-----------------------------------------------------------------------------
 \section{Conclusion}
 
-Les travaux étudiés montrent que l'apprentissage contrastif sur graphes repose sur trois choix~: la construction des vues, l'encodeur et la perte contrastive.
-GraphCL et STKG-CL construisent leurs vues par des perturbations aléatoires, sans tenir compte de la sémantique du graphe.
-G-SITM, à l'inverse, distingue explicitement identités, états, mises à jour et dimensions, mais n'a pas encore été utilisé pour apprendre des représentations.
-Nous formulons donc l'hypothèse, à tester expérimentalement, que cette structure permet de définir des vues positives plus pertinentes que des augmentations aléatoires.
-Le chapitre~\ref{chap:Propositions} développe cette piste.
+ L'apprentissage contrastif sur graphes dépend de la construction des vues, du choix de l'encodeur
+et de la perte optimisée. GraphCL et STKG-CL construisent leurs vues par des perturbations
+aléatoires, sans tenir compte de la sémantique du graphe. G-SITM distingue les identités, les états,
+les mises à jour et les dimensions sémantiques, mais n'a pas encore été utilisé pour apprendre des
+représentations. Nous cherchons donc expérimentalement si cette structure permet de construire des
+vues positives plus pertinentes que des augmentations aléatoires. Le
+chapitre~\ref{chap:Propositions} présente cette piste.
 
 %=============================================================================
 % FICHES DE LECTURE (annexe "Fiches de lecture")
@@ -470,42 +554,52 @@ Le chapitre~\ref{chap:Propositions} développe cette piste.
 
 \paragraph{\emph{GraphCL : Contrastive Self-Supervised Learning of Graph Representations}.}
 Hafidi, Ghogho, Ciblat, Swami \cite{hafidi2020graphcl}.
-Apprentissage auto-supervisé d'embeddings de nœuds par contraste entre deux vues perturbées du sous-graphe à $L$ sauts d'un même nœud.
+ Apprentissage auto-supervisé d'embeddings de nœuds par contraste entre deux vues perturbées du
+sous-graphe à $L$ sauts d'un même nœud.
 
 \subparagraph{Résumé.}
-Les vues sont obtenues par suppression aléatoire d'arêtes et d'attributs~; un encodeur GNN à agrégation par moyenne produit les embeddings, optimisés par une perte contrastive à température.
-Les résultats sur cinq jeux de données surpassent DGI et les autres méthodes non supervisées comparées.
+ Les vues sont obtenues par suppression aléatoire d'arêtes et d'attributs~; un encodeur GNN à
+agrégation par moyenne produit les embeddings, optimisés par une perte contrastive à température.
+ Les résultats sur cinq jeux de données surpassent DGI et les autres méthodes non supervisées
+comparées.
 
 \subparagraph{Analyse}
 Bonne base pour une méthode de référence~; ne traite ni types de relations ni temps.
 
 \paragraph{\emph{Next-POI Recommendation via Spatial-Temporal Knowledge Graph Contrastive Learning and Trajectory Prompt}.}
 Chen et al. \cite{chen2025stkgplm}.
-Recommandation du prochain POI combinant texte de trajectoire (modèle de langage), transformeur spatio-temporel et contraste sur sous-graphes d'un STKG.
+ Recommandation du prochain POI combinant texte de trajectoire (modèle de langage), transformeur
+spatio-temporel et contraste sur sous-graphes d'un STKG.
 
 \subparagraph{Résumé.}
-STKG-CL échantillonne deux sous-graphes par trajectoire, les encode avec KGAT et les compare par InfoNCE pour réduire le bruit de connaissance.
-Le modèle complet dépasse les références sur trois jeux de données~; une profondeur de 2 est optimale.
+ STKG-CL échantillonne deux sous-graphes par trajectoire, les encode avec KGAT et les compare par
+InfoNCE pour réduire le bruit de connaissance.
+ Le modèle complet dépasse les références sur trois jeux de données~; une profondeur de 2 est
+optimale.
 
 \subparagraph{Analyse}
-Référence imposée par le sujet~; augmentation aléatoire seulement, effet du contraste mesuré par ablation.
+ Référence imposée par le sujet~; augmentation aléatoire seulement, effet du contraste mesuré par
+ablation.
 
 \paragraph{\emph{A Survey of Semantic Trajectory Models}.}
 Siouane et al. \cite{siouane2026survey}.
 Comparaison de 19 modèles de trajectoires sémantiques selon neuf critères.
 
 \subparagraph{Résumé.}
-Un modèle de comparaison commun est proposé, et les auteurs concluent que les modèles d'intérieur supposent un environnement statique et que les interactions sont peu modélisées.
+ Un modèle de comparaison commun est proposé, et les auteurs concluent que les modèles d'intérieur
+supposent un environnement statique et que les interactions sont peu modélisées.
 
 \subparagraph{Analyse}
-Utile pour le vocabulaire et pour situer G-SITM~; pas de lien direct avec l'apprentissage de représentations.
+ Utile pour le vocabulaire et pour situer G-SITM~; pas de lien direct avec l'apprentissage de
+représentations.
 
 \paragraph{\emph{Towards A New Graph-based Model for Semantic Indoor Trajectories with long term Historization}.}
 Siouane et al. \cite{siouane2026gsitm}.
 Définition du modèle G-SITM pour des environnements intérieurs qui évoluent.
 
 \subparagraph{Résumé.}
-Trois catégories de nœuds (base, séquentiel, différentiel) et quatre types d'arêtes (intra-, inter-dimensionnelles, évolution, différentielles), avec opérateurs \emph{split} et \emph{merge}.
+ Trois catégories de nœuds (base, séquentiel, différentiel) et quatre types d'arêtes (intra-,
+inter-dimensionnelles, évolution, différentielles), avec opérateurs \emph{split} et \emph{merge}.
 L'évaluation synthétique montre une forte réduction de la duplication par rapport aux instantanés.
 
 \subparagraph{Analyse}
@@ -516,7 +610,6 @@ Graphe cible du projet~; évaluation préliminaire et pas d'apprentissage de rep
 
 % \part{Réalisations} % À décommenter si l'état de l'art a nécessité plusieurs chapitres.
 % \label{part:Realisations}
-
 \chapter{Propositions}
 \label{chap:Propositions}
 
